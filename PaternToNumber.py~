@@ -1,0 +1,14 @@
+import sys
+
+pattern = sys.stdin.readline()
+
+def PatternToNumber(pattern):
+        symbols = {'A':0,'C':1,'G':2,'T':3}
+        if not pattern in ('A','C','G','T'): 
+            return 0
+        symbol = pattern[-1]
+        prefix = pattern[:len(pattern)]
+        return 4 * PatternToNumber(prefix) + symbols[symbol]
+
+if __name__ == '__main__':
+    print(PatternToNumber(pattern)

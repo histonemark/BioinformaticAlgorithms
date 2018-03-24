@@ -1,0 +1,438 @@
+#+TITLE: Bioinformatic Algorithms Coursera
+
+* Week 1: Where in the Genome Does Replication Begin? (Part 1/2)
+:PROPERTIES:
+:ATTACH_DIR: /home/mcorrales/Dropbox/Bioinfo_algos/week1/
+:ATTACH_DIR_INHERIT: t
+:END:
+** Hidden Messages in the Replication Origin
+
+To compute Count(Text, Pattern), our plan is to “slide a window” down Text,
+checking whether each k-mer substring of Text matches Pattern. We will
+therefore refer to the k-mer starting at position i of Text as Text(i, k).
+Throughout this book, we will often use 0-based indexing, meaning that we count
+starting at 0 instead of 1. In this case, Text begins at position 0 and ends at
+position |Text| − 1 (|Text| denotes the number of symbols in Text). For
+example, if Text = GACCATACTG, then Text(4, 3) = ATA. Note that the last k-mer
+of Text begins at position |Text| − k, e.g., the last 3-mer of GACCATACTG
+starts at position 10 − 3 = 7. This discussion results in the following
+pseudocode for computing Count(Text, Pattern).
+ 
+*Code Challenge:* Implement PatternCount.
+     *Input:* Strings Text and Pattern.
+     *Output:* Count(Text, Pattern).
+
+#+BEGIN_SRC python :tangle pattern_count.py 
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+import sys
+
+
+# Assume text is only A,C,T,G
+
+def patterncount(text,pattern):
+    ''' Returns the number of times that pattern is found in text accepting
+    overlapped occurrences.'''
+    
+    count = 0
+    texts = len(text)
+    patterns = len(pattern)
+    indices = texts-patterns
+
+    for i in range(indices):
+        if text[i: i + patterns] == pattern:
+            count += 1
+    print("The kmer was found %d times\n" % count)        
+    return count
+
+if __name__ == "__main__":
+    text = sys.argv[1]
+    pattern = sys.argv[2]
+    patterncount(text,pattern)
+
+
+#+END_SRC   
+
+We say that Pattern is a most frequent k-mer in Text if it maximizes
+Count(Text, Pattern) among all k-mers. You can see that ACTAT is a most
+frequent 5-mer of ACAACTATGCATACTATCGGGAACTATCCT, and ATA is a most frequent
+3-mer of CGATATATCCATAG.
+
+*Code Challenge:* Solve the Frequent Words Problem.
+     *Input:*  A string Text and an integer k.
+     *Output:* All most frequent k-mers in Text. 
+
+#+BEGIN_SRC python :tangle frequent_words.py
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+import sys
+from collections import defaultdict
+
+#text,k = sys.stdin.read().splitlines()
+text = sys.argv[1]
+k = sys.argv[2]
+
+k = int(k)
+kmers = defaultdict(int)
+texts = len(text)
+indices = texts - k + 1
+
+for i in range(indices):
+    kmer = text[i: i + k]
+    kmers[kmer] += 1
+
+
+sorted_kmers = sorted(kmers.items(), key=lambda kv: (kv[1], kv[0]))
+max_kmer  = sorted_kmers.pop()
+max_kmers = [max_kmer[0]]
+    
+for i in range(len(sorted_kmers) - 1):
+    next_kmer = sorted_kmers.pop()
+        
+    if int(next_kmer[1]) == int(max_kmer[1]):
+        max_kmers.append(next_kmer[0])
+        max_kmer = next_kmer
+else:
+    print(" ".join(max_kmers[::-1]))
+
+#+END_SRC
+*** Using a Frequency array to speed the search
+
+Each kmer is encoded as a 4base number ordered lexicographically.
+Ex: 6mers 0: AAAAAA, 1:AAAAAC, 2:AAAAAG, 3:AAAAAT ...
+
+We need 2 helper functions: 
+1. to convert from kmer to number(index)
+
+#+BEGIN_SRC python :tangle PatternToNumber.py
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+import sys
+
+
+def PatternToNumber(pattern):
+    symbols = {'A': 0, 'C': 1, 'G':  2, 'T': 3}
+    if pattern == '':
+        return 0
+    symbol = pattern[-1]
+    prefix = pattern[:len(pattern) - 1]
+    return 4 * PatternToNumber(prefix) + symbols[symbol]
+
+if __name__ == '__main__':
+    pattern = sys.argv[1]
+    print(PatternToNumber(pattern))
+
+#+END_SRC 
+
+2. to convert from number to pattern
+
+#+BEGIN_SRC python :tangle NumberToPattern.py
+#!/usr/bin/env python
+# -*- coding:utf-8 -*- 
+import sys
+
+
+def NumberToPattern(index, k):
+    numtosymbol = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
+    if k == 1:
+        return numtosymbol[index]
+    prefixindex = index // 4
+    remainder = index % 4
+    prefixpattern = NumberToPattern(prefixindex, k - 1)
+    return prefixpattern + numtosymbol[remainder]
+
+if __name__ == '__main__':
+    idx = int(sys.argv[1])
+    k = int(sys.argv[2])
+    print(NumberToPattern(idx, k))
+#+END_SRC
+
+
+- Frequentwords(kmers) with Frequency Array
+
+*Code Challenge:* Implement ComputingFrequencies to generate a frequency array.
+    *Input:* A DNA string Text followed by an integer k.
+    *Output:* FrequencyArray(Text).
+
+
+
+#+BEGIN_SRC python :tangle computing_frequencies.py  
+  #!/usr/bin/env python
+  # -*- coding:utf-8 -*-
+  import sys
+
+
+  def PatternToNumber(pattern):
+      symbols = {'A': 0, 'C': 1, 'G':  2, 'T': 3}
+      if pattern == '':
+          return 0
+      symbol = pattern[-1]
+      prefix = pattern[:len(pattern) - 1]
+      return 4 * PatternToNumber(prefix) + symbols[symbol]
+
+
+  def computefreqs(text, k):
+      # We initialize the array with 0
+      freq_array = [0 for i in range(4 ** k)]
+    
+      # We slide a window of size k updating the freq in the array
+      textl = len(text)
+      #kl = len(k)
+      for pos in range(textl - k + 1):
+          kmer = text[pos : pos + k]
+          freq_array[PatternToNumber(kmer)] += 1
+
+      return freq_array
+
+  if __name__ == "__main__":
+      str_array = [str(i) for i in computefreqs(sys.argv[1], int(sys.argv[2]))]
+      print(' '.join(str_array))
+#+END_SRC     
+** Some Hidden messages are more surprising than others
+
+Given a nucleotide p, we denote its complementary nucleotide as p*. The reverse
+complement of a string Pattern = p1 … pn is the string Patternrc = pn* … p1*
+formed by taking the complement of each nucleotide in Pattern, then reversing
+the resulting string. We will need the solution to the following problem
+throughout this chapter:
+
+Reverse Complement Problem: Find the reverse complement of a DNA string.
+     Input: A DNA string Pattern.
+     Output: Patternrc , the reverse complement of Pattern.
+
+#+BEGIN_SRC python :tangle revcomp.py
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+import sys
+
+
+#DNA = sys.stdin.read().rstrip().upper() # Make sure DNA seq is capital
+DNA = sys.argv[1].upper()
+
+# Raw and noob implementation without using maketrans or a dict
+
+complement = []
+for letter in DNA:
+    if letter not in 'ACTG': # check if we are reciving an non DNA input
+        print('Non DNA character letter %s' % letter)
+
+    if letter == 'A':
+        complement.append('T')
+    elif letter == 'T':
+        complement.append('A')
+    elif letter == 'C':
+        complement.append('G')
+    else:
+        complement.append('C')
+
+revcomplement = complement[::-1]
+print(''.join(revcomplement))
+
+#+END_SRC 
+ 
+*Code Challenge:* Solve the Pattern Matching Problem.
+     *Input:* Two strings, Pattern and Genome.
+     *Output:* A collection of space-separated integers specifying all starting
+     positions where Pattern appears as a substring of Genome. 
+
+#+BEGIN_SRC python :tangle patternmatching.py
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+import sys
+
+#lines = sys.stdin.read().splitlines()
+#pattern = lines[0]
+#dna = lines[1]
+
+dna = sys.argv[2]
+pattern = sys.argv[1]
+ldna = len(dna)
+lpat = len(pattern)
+
+pos = []
+
+for i in range(ldna - lpat + 1):
+    if dna[i: i + lpat] == pattern:
+        pos.append(str(i))
+
+print(' '.join(pos))
+
+#+END_SRC
+** An explosion of Hidden messages
+The Clump Finding Problem
+
+Now imagine that you are trying to find ori in a newly sequenced bacterial
+genome. Searching for “clumps” of either ATGATCAAG /CTTGATCAT or
+CCTACCACC/GGTGGTAGG is unlikely to help, since this new genome may use a
+completely different hidden message! Before we lose all hope, let’s change our
+computational focus: instead of finding clumps of a specific k-mer, let’s try
+to find every k-mer that forms a clump in the genome. Hopefully, the locations
+of these clumps will shed light on the location of ori.
+
+
+Our plan is to slide a window of fixed length L along the genome, looking for a
+region where a k-mer appears several times in short succession. The parameter
+value L = 500 reflects the typical length of ori in bacterial genomes.
+
+
+
+We defined a k-mer as a "clump" if it appears many times within a short
+interval of the genome. More formally, given integers L and t, a k-mer Pattern
+forms an (L, t)-clump inside a (longer) string Genome if there is an interval
+of Genome of length L in which this k-mer appears at least t times. (This
+definition assumes that the k-mer completely fits within the interval.) For
+example, TGCA forms a (25,3)-clump in the following Genome:
+
+gatcagcataagggtccCTGCAATGCATGACAAGCCTGCAGTtgttttac
+
+From our previous examples of ori regions, ATGATCAAG forms a (500,3)-clump in
+the Vibrio cholerae genome, and CCTACCACC forms a (500,3)-clump in the
+Thermotoga petrophila genome. We are now ready to formulate the following
+problem.
+
+*Clump Finding Problem:* Find patterns forming clumps in a string.
+     *Input:* A string Genome, and integers k, L, and t.
+     *Output:* All distinct k-mers forming (L, t)-clumps in Genome.
+ 
+#+BEGIN_SRC python :tangle clumpfinding.py 
+  import sys
+
+
+  def PatternToNumber(pattern):
+      symbols = {'A': 0, 'C': 1, 'G':  2, 'T': 3}
+      if pattern == '':
+          return 0
+      symbol = pattern[-1]
+      prefix = pattern[:len(pattern) - 1]
+      return 4 * PatternToNumber(prefix) + symbols[symbol]
+
+
+  def NumberToPattern(index, k):
+      numtosymbol = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
+      if k == 1:
+          return numtosymbol[index]
+      prefixindex = index // 4
+      remainder = index % 4
+      prefixpattern = NumberToPattern(prefixindex, k - 1)
+      return prefixpattern + numtosymbol[remainder]
+
+
+  def computefreqs(text, k):
+      # We initialize the array with 0s
+      freq_array = [0 for i in range(4 ** k)]
+      # We slide a window of size k updating the freq in the array
+      textl = len(text)
+      for pos in range(textl - k + 1):
+          kmer = text[pos: pos + k]
+          freq_array[PatternToNumber(kmer)] += 1
+      return freq_array
+
+
+  def clumpfind(genome, k, l, t):
+      ''' Find all k-mers generating (l,t)-clumps '''
+      freqpatterns = []
+      clump_array = [0 for i in range(4 ** k)]
+
+      for i in range(len(genome) - l + 1):
+          window = genome[i: i + l]
+          kmers_freq = computefreqs(window, k)
+          for idx in range(4 ** k):
+              if kmers_freq[idx] >= t:
+                  clump_array[idx] = 1
+      for i, kmer in enumerate(clump_array):
+          if clump_array[i] == 1:
+              kmer = NumberToPattern(i, k)
+              if kmer not in freqpatterns:
+                  freqpatterns.append(kmer)
+              return sorted(freqpatterns)
+
+  if __name__ == '__main__':
+      print(' '.join(clumpfind(sys.argv[1].upper(), int(sys.argv[2]),
+                               int(sys.argv[3]), int(sys.argv[4]))))
+#+END_SRC
+
+Regenerating the array for each window is a waste and the algorithm is too
+slow. When we slide the window 1 position the frequencies only vary for the
+first and last k-mer inside the window. 
+
+#+BEGIN_SRC python :tangle clumpfinding_fast.py 
+  import sys
+
+
+  def PatternToNumber(pattern):
+      symbols = {'A': 0, 'C': 1, 'G':  2, 'T': 3}
+      if pattern == '':
+          return 0
+      symbol = pattern[-1]
+      prefix = pattern[:len(pattern) - 1]
+      return 4 * PatternToNumber(prefix) + symbols[symbol]
+
+
+  def NumberToPattern(index, k):
+      numtosymbol = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
+      if k == 1:
+          return numtosymbol[index]
+      prefixindex = index // 4
+      remainder = index % 4
+      prefixpattern = NumberToPattern(prefixindex, k - 1)
+      return prefixpattern + numtosymbol[remainder]
+
+
+  def computefreqs(text, k):
+      # We initialize the array with 0s
+      freq_array = [0 for i in range(4 ** k)]
+      # We slide a window of size k updating the freq in the array
+      textl = len(text)
+      for pos in range(textl - k + 1):
+          kmer = text[pos: pos + k]
+          freq_array[PatternToNumber(kmer)] += 1
+      return freq_array
+
+
+  def fastclumpfind(genome, k, l, t):
+
+      freqpatterns = []
+      allkmers = range(4 ** k)
+      clump_array = [0 for i in allkmers]
+
+      # Generate freq-array for the first window and search for clumps
+      # pdb.set_trace()
+      window = genome[0:l]
+      kmers_freq = computefreqs(window, k)
+      for i in allkmers:
+          if kmers_freq[i] >= t:
+              clump_array[i] = 1
+
+      # Slide a window len l and update freq_array
+      for i in xrange(1, len(genome) - l):
+          firstkmer = genome[i: i + k]
+          fidx = PatternToNumber(firstkmer)
+          kmers_freq[fidx] -= 1
+          lastkmer = genome[i + l - k: i + l]
+          lidx = PatternToNumber(lastkmer)
+          kmers_freq[lidx] += 1
+          if kmers_freq[fidx] >= t:
+              clump_array[fidx] = 1
+          if kmers_freq[lidx] >= t:
+              clump_array[lidx] = 1
+
+      for i in allkmers:
+          if clump_array[i] == 1:
+              kmer = NumberToPattern(i, k)
+              if kmer not in freqpatterns:
+                  freqpatterns.append(kmer)
+
+      return sorted(freqpatterns)
+
+  if __name__ == '__main__':
+      with open(sys.argv[1]) as f:
+          genome = f.readline().rstrip()
+          k, l, t = f.readline().split()
+          clumps = ' '.join(fastclumpfind(genome, int(k), int(l), int(t)))
+          print(clumps)
+      # print(' '.join(fastclumpfind(sys.argv[1].upper(), int(sys.argv[2]),
+      #                              int(sys.argv[3]), int(sys.argv[4]))))
+#+END_SRC
+ 
+ Another method to increase the speed of the Algorithm is searching by sorting
+ 

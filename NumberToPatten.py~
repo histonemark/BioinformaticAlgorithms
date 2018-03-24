@@ -1,0 +1,12 @@
+import sys
+
+
+def NumberToPattern(index, k):
+    numtosymbol = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
+    symbols = []
+    if k == 1:
+        return numtosymbol[k]
+    prefixindex = index // 4
+    remainder   = index % 4
+    symbol = symbols.append(numtosymbol[remainder])
+    prefixpattern = NumberToPattern(prefixindex, k - 1)
