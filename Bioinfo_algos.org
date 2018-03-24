@@ -2,7 +2,7 @@
 
 * Week 1: Where in the Genome Does Replication Begin? (Part 1/2)
 :PROPERTIES:
-:ATTACH_DIR: /home/mcorrales/Dropbox/Bioinfo_algos/week1/
+:ATTACH_DIR: /home/mcorrales/Dropbox/Bioinfo_algos/
 :ATTACH_DIR_INHERIT: t
 :END:
 ** Hidden Messages in the Replication Origin
@@ -30,7 +30,7 @@ import sys
 
 # Assume text is only A,C,T,G
 
-def patterncount(text,pattern):
+def pattern_count(text,pattern):
     ''' Returns the number of times that pattern is found in text accepting
     overlapped occurrences.'''
     
@@ -48,7 +48,7 @@ def patterncount(text,pattern):
 if __name__ == "__main__":
     text = sys.argv[1]
     pattern = sys.argv[2]
-    patterncount(text,pattern)
+    pattern_count(text,pattern)
 
 
 #+END_SRC   
@@ -96,7 +96,7 @@ else:
     print(" ".join(max_kmers[::-1]))
 
 #+END_SRC
-*** Using a Frequency array to speed the search
+*** Using Frequency arrays to speed the search
 
 Each kmer is encoded as a 4base number ordered lexicographically.
 Ex: 6mers 0: AAAAAA, 1:AAAAAC, 2:AAAAAG, 3:AAAAAT ...
@@ -110,17 +110,17 @@ We need 2 helper functions:
 import sys
 
 
-def PatternToNumber(pattern):
+def pattern_to_number(pattern):
     symbols = {'A': 0, 'C': 1, 'G':  2, 'T': 3}
     if pattern == '':
         return 0
     symbol = pattern[-1]
     prefix = pattern[:len(pattern) - 1]
-    return 4 * PatternToNumber(prefix) + symbols[symbol]
+    return 4 * pattern_to_number(prefix) + symbols[symbol]
 
 if __name__ == '__main__':
     pattern = sys.argv[1]
-    print(PatternToNumber(pattern))
+    print(pattern_to_number(pattern))
 
 #+END_SRC 
 
@@ -132,19 +132,19 @@ if __name__ == '__main__':
 import sys
 
 
-def NumberToPattern(index, k):
+def number_to_pattern(index, k):
     numtosymbol = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
     if k == 1:
         return numtosymbol[index]
     prefixindex = index // 4
     remainder = index % 4
-    prefixpattern = NumberToPattern(prefixindex, k - 1)
+    prefixpattern = number_to_pattern(prefixindex, k - 1)
     return prefixpattern + numtosymbol[remainder]
 
 if __name__ == '__main__':
     idx = int(sys.argv[1])
     k = int(sys.argv[2])
-    print(NumberToPattern(idx, k))
+    print(number_to_pattern(idx, k))
 #+END_SRC
 
 
@@ -162,16 +162,16 @@ if __name__ == '__main__':
   import sys
 
 
-  def PatternToNumber(pattern):
+  def pattern_to_number(pattern):
       symbols = {'A': 0, 'C': 1, 'G':  2, 'T': 3}
       if pattern == '':
           return 0
       symbol = pattern[-1]
       prefix = pattern[:len(pattern) - 1]
-      return 4 * PatternToNumber(prefix) + symbols[symbol]
+      return 4 * pattern_to_number(prefix) + symbols[symbol]
 
 
-  def computefreqs(text, k):
+  def compute_freqs(text, k):
       # We initialize the array with 0
       freq_array = [0 for i in range(4 ** k)]
     
@@ -180,12 +180,12 @@ if __name__ == '__main__':
       #kl = len(k)
       for pos in range(textl - k + 1):
           kmer = text[pos : pos + k]
-          freq_array[PatternToNumber(kmer)] += 1
+          freq_array[pattern_to_number(kmer)] += 1
 
       return freq_array
 
   if __name__ == "__main__":
-      str_array = [str(i) for i in computefreqs(sys.argv[1], int(sys.argv[2]))]
+      str_array = [str(i) for i in compute_freqs(sys.argv[1], int(sys.argv[2]))]
       print(' '.join(str_array))
 #+END_SRC     
 ** Some Hidden messages are more surprising than others
@@ -294,37 +294,39 @@ problem.
      *Input:* A string Genome, and integers k, L, and t.
      *Output:* All distinct k-mers forming (L, t)-clumps in Genome.
  
-#+BEGIN_SRC python :tangle clumpfinding.py 
+#+BEGIN_SRC python :tangle clumpfinding.py
+  #!/usr/bin/env python
+  # -*- coding:utf-8 -*-  
   import sys
 
 
-  def PatternToNumber(pattern):
+  def pattern_to_number(pattern):
       symbols = {'A': 0, 'C': 1, 'G':  2, 'T': 3}
       if pattern == '':
           return 0
       symbol = pattern[-1]
       prefix = pattern[:len(pattern) - 1]
-      return 4 * PatternToNumber(prefix) + symbols[symbol]
+      return 4 * pattern_to_number(prefix) + symbols[symbol]
 
 
-  def NumberToPattern(index, k):
+  def number_to_pattern(index, k):
       numtosymbol = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
       if k == 1:
           return numtosymbol[index]
       prefixindex = index // 4
       remainder = index % 4
-      prefixpattern = NumberToPattern(prefixindex, k - 1)
+      prefixpattern = number_to_pattern(prefixindex, k - 1)
       return prefixpattern + numtosymbol[remainder]
 
 
-  def computefreqs(text, k):
+  def compute_freqs(text, k):
       # We initialize the array with 0s
       freq_array = [0 for i in range(4 ** k)]
       # We slide a window of size k updating the freq in the array
       textl = len(text)
       for pos in range(textl - k + 1):
           kmer = text[pos: pos + k]
-          freq_array[PatternToNumber(kmer)] += 1
+          freq_array[pattern_to_number(kmer)] += 1
       return freq_array
 
 
@@ -335,13 +337,13 @@ problem.
 
       for i in range(len(genome) - l + 1):
           window = genome[i: i + l]
-          kmers_freq = computefreqs(window, k)
+          kmers_freq = compute_freqs(window, k)
           for idx in range(4 ** k):
               if kmers_freq[idx] >= t:
                   clump_array[idx] = 1
       for i, kmer in enumerate(clump_array):
           if clump_array[i] == 1:
-              kmer = NumberToPattern(i, k)
+              kmer = number_to_pattern(i, k)
               if kmer not in freqpatterns:
                   freqpatterns.append(kmer)
               return sorted(freqpatterns)
@@ -356,36 +358,38 @@ slow. When we slide the window 1 position the frequencies only vary for the
 first and last k-mer inside the window. 
 
 #+BEGIN_SRC python :tangle clumpfinding_fast.py 
+  #!/usr/bin/env python
+  # -*- coding:utf-8 -*-
   import sys
 
 
-  def PatternToNumber(pattern):
+  def pattern_to_number(pattern):
       symbols = {'A': 0, 'C': 1, 'G':  2, 'T': 3}
       if pattern == '':
           return 0
       symbol = pattern[-1]
       prefix = pattern[:len(pattern) - 1]
-      return 4 * PatternToNumber(prefix) + symbols[symbol]
+      return 4 * pattern_to_number(prefix) + symbols[symbol]
 
 
-  def NumberToPattern(index, k):
+  def number_to_pattern(index, k):
       numtosymbol = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
       if k == 1:
           return numtosymbol[index]
       prefixindex = index // 4
       remainder = index % 4
-      prefixpattern = NumberToPattern(prefixindex, k - 1)
+      prefixpattern = number_to_pattern(prefixindex, k - 1)
       return prefixpattern + numtosymbol[remainder]
 
 
-  def computefreqs(text, k):
+  def compute_freqs(text, k):
       # We initialize the array with 0s
       freq_array = [0 for i in range(4 ** k)]
       # We slide a window of size k updating the freq in the array
       textl = len(text)
       for pos in range(textl - k + 1):
           kmer = text[pos: pos + k]
-          freq_array[PatternToNumber(kmer)] += 1
+          freq_array[pattern_to_number(kmer)] += 1
       return freq_array
 
 
@@ -398,7 +402,7 @@ first and last k-mer inside the window.
       # Generate freq-array for the first window and search for clumps
       # pdb.set_trace()
       window = genome[0:l]
-      kmers_freq = computefreqs(window, k)
+      kmers_freq = compute_freqs(window, k)
       for i in allkmers:
           if kmers_freq[i] >= t:
               clump_array[i] = 1
@@ -406,10 +410,10 @@ first and last k-mer inside the window.
       # Slide a window len l and update freq_array
       for i in xrange(1, len(genome) - l):
           firstkmer = genome[i: i + k]
-          fidx = PatternToNumber(firstkmer)
+          fidx = pattern_to_number(firstkmer)
           kmers_freq[fidx] -= 1
           lastkmer = genome[i + l - k: i + l]
-          lidx = PatternToNumber(lastkmer)
+          lidx = pattern_to_number(lastkmer)
           kmers_freq[lidx] += 1
           if kmers_freq[fidx] >= t:
               clump_array[fidx] = 1
@@ -418,7 +422,7 @@ first and last k-mer inside the window.
 
       for i in allkmers:
           if clump_array[i] == 1:
-              kmer = NumberToPattern(i, k)
+              kmer = number_to_pattern(i, k)
               if kmer not in freqpatterns:
                   freqpatterns.append(kmer)
 
@@ -433,4 +437,6 @@ first and last k-mer inside the window.
       # print(' '.join(fastclumpfind(sys.argv[1].upper(), int(sys.argv[2]),
       #                              int(sys.argv[3]), int(sys.argv[4]))))
 #+END_SRC
+ 
+ Another method to increase the speed of the Algorithm is searching by sorting.
  
