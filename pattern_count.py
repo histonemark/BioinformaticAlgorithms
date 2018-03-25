@@ -5,7 +5,7 @@ import sys
 
 # Assume text is only A,C,T,G
 
-def patterncount(text,pattern):
+def pattern_count(text,pattern):
     ''' Returns the number of times that pattern is found in text accepting
     overlapped occurrences.'''
     
@@ -23,4 +23,4 @@ def patterncount(text,pattern):
 if __name__ == "__main__":
     text = sys.argv[1]
     pattern = sys.argv[2]
-    patterncount(text,pattern)
+    pattern_count(text,pattern)

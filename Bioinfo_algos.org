@@ -104,7 +104,7 @@ Ex: 6mers 0: AAAAAA, 1:AAAAAC, 2:AAAAAG, 3:AAAAAT ...
 We need 2 helper functions: 
 1. to convert from kmer to number(index)
 
-#+BEGIN_SRC python :tangle PatternToNumber.py
+#+BEGIN_SRC python :tangle pattern_to_number.py
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 import sys
@@ -126,7 +126,7 @@ if __name__ == '__main__':
 
 2. to convert from number to pattern
 
-#+BEGIN_SRC python :tangle NumberToPattern.py
+#+BEGIN_SRC python :tangle number_to_pattern.py
 #!/usr/bin/env python
 # -*- coding:utf-8 -*- 
 import sys
@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
 
 
-#+BEGIN_SRC python :tangle computing_frequencies.py  
+#+BEGIN_SRC python :tangle compute_freqs.py  
   #!/usr/bin/env python
   # -*- coding:utf-8 -*-
   import sys
@@ -200,7 +200,7 @@ Reverse Complement Problem: Find the reverse complement of a DNA string.
      Input: A DNA string Pattern.
      Output: Patternrc , the reverse complement of Pattern.
 
-#+BEGIN_SRC python :tangle revcomp.py
+#+BEGIN_SRC python :tangle rev_comp.py
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 import sys
@@ -235,7 +235,7 @@ print(''.join(revcomplement))
      *Output:* A collection of space-separated integers specifying all starting
      positions where Pattern appears as a substring of Genome. 
 
-#+BEGIN_SRC python :tangle patternmatching.py
+#+BEGIN_SRC python :tangle pattern_matching.py
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 import sys
@@ -294,7 +294,7 @@ problem.
      *Input:* A string Genome, and integers k, L, and t.
      *Output:* All distinct k-mers forming (L, t)-clumps in Genome.
  
-#+BEGIN_SRC python :tangle clumpfinding.py
+#+BEGIN_SRC python :tangle clump_find.py
   #!/usr/bin/env python
   # -*- coding:utf-8 -*-  
   import sys
@@ -330,7 +330,7 @@ problem.
       return freq_array
 
 
-  def clumpfind(genome, k, l, t):
+  def clump_find(genome, k, l, t):
       ''' Find all k-mers generating (l,t)-clumps '''
       freqpatterns = []
       clump_array = [0 for i in range(4 ** k)]
@@ -349,15 +349,17 @@ problem.
               return sorted(freqpatterns)
 
   if __name__ == '__main__':
-      print(' '.join(clumpfind(sys.argv[1].upper(), int(sys.argv[2]),
+      print(' '.join(clump_find(sys.argv[1].upper(), int(sys.argv[2]),
                                int(sys.argv[3]), int(sys.argv[4]))))
 #+END_SRC
+
+#+RESULTS:
 
 Regenerating the array for each window is a waste and the algorithm is too
 slow. When we slide the window 1 position the frequencies only vary for the
 first and last k-mer inside the window. 
 
-#+BEGIN_SRC python :tangle clumpfinding_fast.py 
+#+BEGIN_SRC python :tangle clump_find_fast.py 
   #!/usr/bin/env python
   # -*- coding:utf-8 -*-
   import sys
@@ -385,21 +387,21 @@ first and last k-mer inside the window.
   def compute_freqs(text, k):
       # We initialize the array with 0s
       freq_array = [0 for i in range(4 ** k)]
-      # We slide a window of size k updating the freq in the array
+      # We slide a k window updating the freq in the array
       textl = len(text)
       for pos in range(textl - k + 1):
           kmer = text[pos: pos + k]
           freq_array[pattern_to_number(kmer)] += 1
       return freq_array
 
-
-  def fastclumpfind(genome, k, l, t):
+       
+  def clump_find_fast(genome, k, l, t):
 
       freqpatterns = []
       allkmers = range(4 ** k)
       clump_array = [0 for i in allkmers]
 
-      # Generate freq-array for the first window and search for clumps
+      # Generate freq-array for the first window
       # pdb.set_trace()
       window = genome[0:l]
       kmers_freq = compute_freqs(window, k)
@@ -432,11 +434,12 @@ first and last k-mer inside the window.
       with open(sys.argv[1]) as f:
           genome = f.readline().rstrip()
           k, l, t = f.readline().split()
-          clumps = ' '.join(fastclumpfind(genome, int(k), int(l), int(t)))
+          clumps = ' '.join(clump_find_fast(genome, int(k), int(l), int(t)))
           print(clumps)
-      # print(' '.join(fastclumpfind(sys.argv[1].upper(), int(sys.argv[2]),
+      # print(' '.join(clump_find_fast(sys.argv[1].upper(), int(sys.argv[2]),
       #                              int(sys.argv[3]), int(sys.argv[4]))))
 #+END_SRC
- 
- Another method to increase the speed of the Algorithm is searching by sorting.
+
+*** Use sorting to speed the search 
+
  
